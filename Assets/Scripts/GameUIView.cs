@@ -1,100 +1,100 @@
-using TMPro;             
+п»їusing TMPro;             
 using UnityEngine;       
 using UnityEngine.UI;     
 
 public class GameUIView : MonoBehaviour
 {
-    [Header("Ссылки на тексты")] 
-    [SerializeField] private TextMeshProUGUI scoreText; // Ссылка на текст, куда выводится сумма выпавших очков 
-    [SerializeField] private TextMeshProUGUI resultText; // Ссылка на текст, куда выводится результат раунда 
-    [SerializeField] private TextMeshProUGUI targetsText; // Ссылка на текст, куда выводятся цели раунда 
-    [SerializeField] private TextMeshProUGUI statusText; // Ссылка на текст, куда выводятся подсказки
+    [Header("РЎСЃС‹Р»РєРё РЅР° С‚РµРєСЃС‚С‹")] 
+    [SerializeField] private TextMeshProUGUI scoreText; // РЎСЃС‹Р»РєР° РЅР° С‚РµРєСЃС‚, РєСѓРґР° РІС‹РІРѕРґРёС‚СЃСЏ СЃСѓРјРјР° РІС‹РїР°РІС€РёС… РѕС‡РєРѕРІ 
+    [SerializeField] private TextMeshProUGUI resultText; // РЎСЃС‹Р»РєР° РЅР° С‚РµРєСЃС‚, РєСѓРґР° РІС‹РІРѕРґРёС‚СЃСЏ СЂРµР·СѓР»СЊС‚Р°С‚ СЂР°СѓРЅРґР° 
+    [SerializeField] private TextMeshProUGUI targetsText; // РЎСЃС‹Р»РєР° РЅР° С‚РµРєСЃС‚, РєСѓРґР° РІС‹РІРѕРґСЏС‚СЃСЏ С†РµР»Рё СЂР°СѓРЅРґР° 
+    [SerializeField] private TextMeshProUGUI statusText; // РЎСЃС‹Р»РєР° РЅР° С‚РµРєСЃС‚, РєСѓРґР° РІС‹РІРѕРґСЏС‚СЃСЏ РїРѕРґСЃРєР°Р·РєРё
 
-    [Header("Ссылки на поля ввода")]
-    [SerializeField] private TMP_InputField diceCountInput; // Сколько кубиков бросить
-    [SerializeField] private TMP_InputField drawScoreInput; // Скока очков надо для ничьей
-    [SerializeField] private TMP_InputField winScoreInput; // Скока очков надо для победы
-    [SerializeField] private TMP_InputField lossScoreInput; // Скока очков надо для поражения
+    [Header("РЎСЃС‹Р»РєРё РЅР° РїРѕР»СЏ РІРІРѕРґР°")]
+    [SerializeField] private TMP_InputField diceCountInput; // РЎРєРѕР»СЊРєРѕ РєСѓР±РёРєРѕРІ Р±СЂРѕСЃРёС‚СЊ
+    [SerializeField] private TMP_InputField drawScoreInput; // РЎРєРѕРєР° РѕС‡РєРѕРІ РЅР°РґРѕ РґР»СЏ РЅРёС‡СЊРµР№
+    [SerializeField] private TMP_InputField winScoreInput; // РЎРєРѕРєР° РѕС‡РєРѕРІ РЅР°РґРѕ РґР»СЏ РїРѕР±РµРґС‹
+    [SerializeField] private TMP_InputField lossScoreInput; // РЎРєРѕРєР° РѕС‡РєРѕРІ РЅР°РґРѕ РґР»СЏ РїРѕСЂР°Р¶РµРЅРёСЏ
 
-    [Header("Ссылка на кнопку")] 
-    [SerializeField] private Button rollButton; // Ссылка на кнопку, по нажатию на которую бросаются кубики (через Unity Event)
+    [Header("РЎСЃС‹Р»РєР° РЅР° РєРЅРѕРїРєСѓ")] 
+    [SerializeField] private Button rollButton; // РЎСЃС‹Р»РєР° РЅР° РєРЅРѕРїРєСѓ, РїРѕ РЅР°Р¶Р°С‚РёСЋ РЅР° РєРѕС‚РѕСЂСѓСЋ Р±СЂРѕСЃР°СЋС‚СЃСЏ РєСѓР±РёРєРё (С‡РµСЂРµР· Unity Event)
 
-    [Header("Значения по умолчанию (если поле ввода пустое)")]
+    [Header("Р—РЅР°С‡РµРЅРёСЏ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ (РµСЃР»Рё РїРѕР»Рµ РІРІРѕРґР° РїСѓСЃС‚РѕРµ)")]
     [SerializeField] private int defaultDrawTarget = 10;
     [SerializeField] private int defaultWinTarget = 20;
     [SerializeField] private int defaultLossTarget = 5;
 
-    // Публичное свойство, чтобы GameManager мог подписаться на кнопку через код.
+    // РџСѓР±Р»РёС‡РЅРѕРµ СЃРІРѕР№СЃС‚РІРѕ, С‡С‚РѕР±С‹ GameManager РјРѕРі РїРѕРґРїРёСЃР°С‚СЊСЃСЏ РЅР° РєРЅРѕРїРєСѓ С‡РµСЂРµР· РєРѕРґ.
     public Button RollButton => rollButton;
 
-    // Показывает сумму выпавших очков в тексте ScoreText
+    // РџРѕРєР°Р·С‹РІР°РµС‚ СЃСѓРјРјСѓ РІС‹РїР°РІС€РёС… РѕС‡РєРѕРІ РІ С‚РµРєСЃС‚Рµ ScoreText
     public void ShowScore(int score)
     {
-        // Проверка на null: если ссылка не привязана в инспекторе, не будет ошибки
+        // РџСЂРѕРІРµСЂРєР° РЅР° null: РµСЃР»Рё СЃСЃС‹Р»РєР° РЅРµ РїСЂРёРІСЏР·Р°РЅР° РІ РёРЅСЃРїРµРєС‚РѕСЂРµ, РЅРµ Р±СѓРґРµС‚ РѕС€РёР±РєРё
         if (scoreText != null)
         {
-            scoreText.text = $"Сумма очков: {score}";
+            scoreText.text = $"РЎСѓРјРјР° РѕС‡РєРѕРІ: {score}";
         }
     }
 
-    // Показывает результат раунда в тексте ResultText и красит его в нужный цвет
+    // РџРѕРєР°Р·С‹РІР°РµС‚ СЂРµР·СѓР»СЊС‚Р°С‚ СЂР°СѓРЅРґР° РІ С‚РµРєСЃС‚Рµ ResultText Рё РєСЂР°СЃРёС‚ РµРіРѕ РІ РЅСѓР¶РЅС‹Р№ С†РІРµС‚
     public void ShowResult(GameResult result)
     {
-        // Если текст не привязан — выходим, чтобы не было ошибки
+        // Р•СЃР»Рё С‚РµРєСЃС‚ РЅРµ РїСЂРёРІСЏР·Р°РЅ вЂ” РІС‹С…РѕРґРёРј, С‡С‚РѕР±С‹ РЅРµ Р±С‹Р»Рѕ РѕС€РёР±РєРё
         if (resultText == null) return;
 
         switch (result)
         {
-            case GameResult.Win:                          // Если результат — Победа
-                resultText.text = "ПОБЕДА!";              
+            case GameResult.Win:                          // Р•СЃР»Рё СЂРµР·СѓР»СЊС‚Р°С‚ вЂ” РџРѕР±РµРґР°
+                resultText.text = "РџРћР‘Р•Р”Рђ!";              
                 resultText.color = Color.green;           
                 break;                                    
-            case GameResult.Draw:                         // Если результат — Ничья
-                resultText.text = "НИЧЬЯ!";               
+            case GameResult.Draw:                         // Р•СЃР»Рё СЂРµР·СѓР»СЊС‚Р°С‚ вЂ” РќРёС‡СЊСЏ
+                resultText.text = "РќРР§Р¬РЇ!";               
                 resultText.color = Color.yellow;          
                 break;                                     
-            case GameResult.Loss:                         // Если результат — Поражение
-                resultText.text = "ПОРАЖЕНИЕ!";           
+            case GameResult.Loss:                         // Р•СЃР»Рё СЂРµР·СѓР»СЊС‚Р°С‚ вЂ” РџРѕСЂР°Р¶РµРЅРёРµ
+                resultText.text = "РџРћР РђР–Р•РќРР•!";           
                 resultText.color = Color.red;           
                 break;                                     
-            default:                                      // Случай None — раунд не завершён
-                resultText.text = "";                     // Очищаем текст
+            default:                                      // РЎР»СѓС‡Р°Р№ None вЂ” СЂР°СѓРЅРґ РЅРµ Р·Р°РІРµСЂС€С‘РЅ
+                resultText.text = "";                     // РћС‡РёС‰Р°РµРј С‚РµРєСЃС‚
                 break;                                    
         }
     }
 
-    // Показывает цели текущего раунда в тексте TargetsText
+    // РџРѕРєР°Р·С‹РІР°РµС‚ С†РµР»Рё С‚РµРєСѓС‰РµРіРѕ СЂР°СѓРЅРґР° РІ С‚РµРєСЃС‚Рµ TargetsText
     public void ShowTargets(int draw, int win, int loss)
     {
-        // Проверка на null
+        // РџСЂРѕРІРµСЂРєР° РЅР° null
         if (targetsText != null)
         {
-            targetsText.text = $"Цели раунда:\nНичья: {draw}\nПобеда: {win}\nПоражение: {loss}";
+            targetsText.text = $"Р¦РµР»Рё СЂР°СѓРЅРґР°:\nРќРёС‡СЊСЏ: {draw}\nРџРѕР±РµРґР°: {win}\nРџРѕСЂР°Р¶РµРЅРёРµ: {loss}";
         }
     }
 
-    // Показывает статусную строку в тексте StatusText (подсказки)
+    // РџРѕРєР°Р·С‹РІР°РµС‚ СЃС‚Р°С‚СѓСЃРЅСѓСЋ СЃС‚СЂРѕРєСѓ РІ С‚РµРєСЃС‚Рµ StatusText (РїРѕРґСЃРєР°Р·РєРё)
     public void ShowStatus(string status)
     {
-        // Проверка на null
+        // РџСЂРѕРІРµСЂРєР° РЅР° null
         if (statusText != null)
         {
-            // Записываем переданный текст в поле статуса
+            // Р—Р°РїРёСЃС‹РІР°РµРј РїРµСЂРµРґР°РЅРЅС‹Р№ С‚РµРєСЃС‚ РІ РїРѕР»Рµ СЃС‚Р°С‚СѓСЃР°
             statusText.text = status;
         }
     }
 
-    // Очищает поле суммы очков перед новым броском
+    // РћС‡РёС‰Р°РµС‚ РїРѕР»Рµ СЃСѓРјРјС‹ РѕС‡РєРѕРІ РїРµСЂРµРґ РЅРѕРІС‹Рј Р±СЂРѕСЃРєРѕРј
     public void ClearScore()
     {
-        // Проверка на null
+        // РџСЂРѕРІРµСЂРєР° РЅР° null
         if (scoreText != null)
         {
-            scoreText.text = "Сумма очков: ...";
+            scoreText.text = "РЎСѓРјРјР° РѕС‡РєРѕРІ: ...";
         }
     }
 
-    // Считывает количество кубиков из InputField.
+    // РЎС‡РёС‚С‹РІР°РµС‚ РєРѕР»РёС‡РµСЃС‚РІРѕ РєСѓР±РёРєРѕРІ РёР· InputField.
     public int GetDiceCount(int maxDices)
     {
         if (diceCountInput != null && int.TryParse(diceCountInput.text, out int count))
@@ -105,28 +105,28 @@ public class GameUIView : MonoBehaviour
         return maxDices;
     }
 
-    // Считывает очки для ничьей из InputField. Если пусто, то вернёт defaultDrawTarget
+    // РЎС‡РёС‚С‹РІР°РµС‚ РѕС‡РєРё РґР»СЏ РЅРёС‡СЊРµР№ РёР· InputField. Р•СЃР»Рё РїСѓСЃС‚Рѕ, С‚Рѕ РІРµСЂРЅС‘С‚ defaultDrawTarget
     public int GetDrawTarget()
     {
         return ParseInput(drawScoreInput, defaultDrawTarget);
     }
 
-    // Считывает очки для победы из InputField. Если пусто, то вернёт defaultWinTarget
+    // РЎС‡РёС‚С‹РІР°РµС‚ РѕС‡РєРё РґР»СЏ РїРѕР±РµРґС‹ РёР· InputField. Р•СЃР»Рё РїСѓСЃС‚Рѕ, С‚Рѕ РІРµСЂРЅС‘С‚ defaultWinTarget
     public int GetWinTarget()
     {
         return ParseInput(winScoreInput, defaultWinTarget);
     }
 
-    // Считывает очки для поражения из InputField. Если пусто, то вернёт defaultLossTarget
+    // РЎС‡РёС‚С‹РІР°РµС‚ РѕС‡РєРё РґР»СЏ РїРѕСЂР°Р¶РµРЅРёСЏ РёР· InputField. Р•СЃР»Рё РїСѓСЃС‚Рѕ, С‚Рѕ РІРµСЂРЅС‘С‚ defaultLossTarget
     public int GetLossTarget()
     {
         return ParseInput(lossScoreInput, defaultLossTarget);
     }
 
-    // Парсинга чисел из InputField
+    // РџР°СЂСЃРёРЅРіР° С‡РёСЃРµР» РёР· InputField
     private int ParseInput(TMP_InputField input, int defaultValue)
     {
-        // Проверяем: поле существует и в нём введено корректное число?
+        // РџСЂРѕРІРµСЂСЏРµРј: РїРѕР»Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚ Рё РІ РЅС‘Рј РІРІРµРґРµРЅРѕ РєРѕСЂСЂРµРєС‚РЅРѕРµ С‡РёСЃР»Рѕ?
         if (input != null && int.TryParse(input.text, out int value))
         {
             return value;
@@ -135,7 +135,7 @@ public class GameUIView : MonoBehaviour
         return defaultValue;
     }
 
-    // Запись целей в поля ввода
+    // Р—Р°РїРёСЃСЊ С†РµР»РµР№ РІ РїРѕР»СЏ РІРІРѕРґР°
     public void SetTargetsInInputs(int draw, int win, int loss)
     {
         if (drawScoreInput != null) drawScoreInput.text = draw.ToString();
