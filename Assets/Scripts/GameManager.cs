@@ -1,217 +1,182 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 public class GameManager : MonoBehaviour
 {
     [Header("Ссылки на объекты")]
-    [SerializeField] private List<Dice> dices = new List<Dice>(); // Список всех кубиков НААА СТОЛЕЕЕ
-    [SerializeField] private Dice dicePrefab; // Ссылка на Prefabы кубика для создания копий
+    [SerializeField] private Dice dicePrefab; // Префаб кубика
 
-    [Header("UI и Настройки")]
-    [SerializeField] private GameUIView uiView; // Ссылка на наш View
+    [Header("UI Input (чтение ввода)")]
+    [SerializeField] private GameUIInput uiInput; // Ссылка на Input. НЕ НА View!
 
-    [Header("Настройки ввода (Input System)")]
-    [SerializeField] private InputActionReference throwActionRef; // Ссылка на бросок 
+    // Список кубиков теперь внутренний, снаружи его никто не читает.
+    private readonly List<Dice> dices = new List<Dice>();
+    private RoundSettings currentRound;
+    private bool isCalculatingScore;
 
-    private RoundSettings currentRound; // Данные о раунде
-
-    private bool isCalculatingScore; // Флаг, идёт ли сейчас процесс подсчёта очков
-
-    // Публичные свойства
-    public List<Dice> Dices => dices;
-    public bool IsCalculatingScore => isCalculatingScore;
+    // ПОДПИСКИ НА СОБЫТИЯ (GameUIView)
+    public event Action<int> OnScoreChanged;                       // Изменилась сумма очков
+    public event Action<GameResult> OnResultChanged;               // Изменился результат (Win/Draw/Loss)
+    public event Action<int, int, int> OnTargetsChanged;           // Изменились цели (draw, win, loss)
+    public event Action<string> OnStatusChanged;                   // Изменился текст статуса
+    public event Action OnRollStarted;                             // Начался бросок (для того чтобы View очистил счёт)
 
     private void Awake()
     {
-        // Инициализация UI и Модели в Awake 
         currentRound = new RoundSettings();
-
-        if (uiView != null)
-        {
-            uiView.ShowScore(0);
-            uiView.ShowStatus("Тыкай SPACE для броска");
-            uiView.ShowResult(GameResult.None);
-
-            // Генерируем случайные цели на первый раунд
-            GenerateRandomTargets();
-        }
+        GenerateRandomTargets();
     }
 
     private void OnEnable()
     {
-        // Отслеживаем нажатие кнопки 
-        if (throwActionRef != null && throwActionRef.action != null)
+        // Подписываемся на событие "игрок запросил бросок" от UI Input
+        if (uiInput != null)
         {
-            throwActionRef.action.Enable();
-            throwActionRef.action.performed += OnThrowPressed;
+            uiInput.OnRollRequested += HandleRollRequested;
         }
-
-        // Если хотим привязать не через инспектор, а кодом
-        //if (uiView != null && uiView.RollButton != null)
-        //{
-        //    uiView.RollButton.onClick.AddListener(OnThrowButtonClicked);
-        //}
     }
 
     private void OnDisable()
     {
-        if (throwActionRef != null && throwActionRef.action != null)
+        // Отписываемся от этого события
+        if (uiInput != null)
         {
-            throwActionRef.action.performed -= OnThrowPressed;
-            throwActionRef.action.Disable();
+            uiInput.OnRollRequested -= HandleRollRequested;
         }
-
-        // Если хотим привязать не через инспектор, а кодом
-        // Отписываемся от кнопки
-        //if (uiView != null && uiView.RollButton != null)
-        //{
-        //    uiView.RollButton.onClick.RemoveListener(OnThrowButtonClicked);
-        //}
     }
 
-    // Метод для кнопки (Unity Event)
-    public void OnThrowButtonClicked()
+    private void Start()
+    {
+        // Отправляем начальное состояние
+        // Start гарантированно идёт после всех OnEnable
+        BroadcastInitialState();
+    }
+
+    private void BroadcastInitialState()
+    {
+        OnScoreChanged?.Invoke(0);
+        OnResultChanged?.Invoke(GameResult.None);
+        OnTargetsChanged?.Invoke(currentRound.DrawTarget, currentRound.WinTarget, currentRound.LossTarget);
+        OnStatusChanged?.Invoke("ТЫКАЙ Space или кнопку, чтобы бросить кубики");
+    }
+
+    // Обработчик события "игрок запросил бросок"
+    private void HandleRollRequested()
     {
         StartRollingProcess();
     }
 
-    private void OnThrowPressed(InputAction.CallbackContext context)
-    {
-        Debug.Log("Клавиша Space нажата! Начинаем вращать!"); // для проверки
-        StartRollingProcess();
-    }
-
-    // Логика запуска броска в один метод (вызывается и от Space, и от кнопки)
     private void StartRollingProcess()
     {
-        if (isCalculatingScore || uiView == null) return;
+        if (isCalculatingScore || uiInput == null) return;
 
-        // Считываем данные из UI 
-        var requestedDiceCount = uiView.GetDiceCount(100); // условный максимум на всякий пожарный
-        Debug.Log($"[INPUT] Игрок запросил {requestedDiceCount} кубиков"); // ВРЕМЕННО
-        currentRound.DiceCount = requestedDiceCount;
-        currentRound.DrawTarget = uiView.GetDrawTarget();
-        currentRound.WinTarget = uiView.GetWinTarget();
-        currentRound.LossTarget = uiView.GetLossTarget();
+        // 1. Читаем ввод из UI Input
+        currentRound.DiceCount = uiInput.GetDiceCount(100);
+        currentRound.DrawTarget = uiInput.GetDrawTarget();
+        currentRound.WinTarget = uiInput.GetWinTarget();
+        currentRound.LossTarget = uiInput.GetLossTarget();
 
-        // Обновляем UI
-        uiView.ShowTargets(currentRound.DrawTarget, currentRound.WinTarget, currentRound.LossTarget);
-        uiView.ShowStatus("Кубики вращаются...");
-        uiView.ClearScore();
-        uiView.ShowResult(GameResult.None);
+        // 2. Сообщаем всем, что раунд начался (View очистит счёт и результат)
+        OnRollStarted?.Invoke();
+        OnTargetsChanged?.Invoke(currentRound.DrawTarget, currentRound.WinTarget, currentRound.LossTarget);
+        OnStatusChanged?.Invoke("Кубики вращаются...");
 
-        // Очищаем старые кубики и создаем новые
+        // 3. Создаём новые кубики и бросаем
         ClearOldDices();
         SpawnDices(currentRound.DiceCount);
-
-        // Запускаем бросок для нужного количества кубиков
         foreach (var dice in dices)
         {
-            if (dice != null)
-            {
-                dice.Roll();
-            }
+            if (dice != null) dice.Roll();
         }
 
-        // Запускаем корутину ожидания остановки кубиков
         StartCoroutine(WaitAndCalculateScoreRoutine());
     }
 
-    // Удаляет все кубики, оставшиеся от предыдущего броска
     private void ClearOldDices()
     {
         foreach (var dice in dices)
         {
-            if (dice != null)
-            {
-                Destroy(dice.gameObject);
-            }
+            if (dice != null) Destroy(dice.gameObject);
         }
         dices.Clear();
     }
 
-    // Создает нужное число кубиков из Prefabа
     private void SpawnDices(int count)
     {
-        Debug.Log($"[SPAWN] Пытаюсь создать {count} кубиков"); // ВРЕМЕННО
         if (dicePrefab == null)
         {
-            Debug.LogError("Dice Prefab не назначен в инспекторе! Как мы тебе кубики наделаем?!");
+            Debug.LogError("Prefab куубика не назначен в инспекторе!");
             return;
         }
 
         for (int i = 0; i < count; i++)
         {
-            // Создаем копию префаба 
-            var newDice = Instantiate(dicePrefab, new Vector3(0, 3f, 0), Quaternion.identity);
+            // Смещаем кубики в линию, чтобы не слипались
+            var offsetX = (i - (count - 1) / 2f) * 0.6f;
+            var offsetZ = UnityEngine.Random.Range(-0.3f, 0.3f);
+            var heightY = 5f + UnityEngine.Random.Range(0f, 0.5f);
+
+            var spawnPosition = new Vector3(offsetX, heightY, offsetZ);
+            var newDice = Instantiate(dicePrefab, spawnPosition, Quaternion.identity);
             dices.Add(newDice);
         }
-        Debug.Log($"[SPAWN] Реально создано: {dices.Count} кубиков"); // ВРЕМЕННО
     }
 
-    // Генерация случайных целей
     private void GenerateRandomTargets()
     {
-        // Генерируем случайные числа. Логика: Поражение < Ничья < Победа
-        currentRound.LossTarget = Random.Range(1, 10);
-        currentRound.DrawTarget = Random.Range(10, 20);
-        currentRound.WinTarget = Random.Range(20, 35);
+        currentRound.LossTarget = UnityEngine.Random.Range(1, 10);
+        currentRound.DrawTarget = UnityEngine.Random.Range(10, 20);
+        currentRound.WinTarget = UnityEngine.Random.Range(20, 35);
 
-        // Обновляем UI
-        uiView.SetTargetsInInputs(currentRound.DrawTarget, currentRound.WinTarget, currentRound.LossTarget);
-        uiView.ShowTargets(currentRound.DrawTarget, currentRound.WinTarget, currentRound.LossTarget);
+        // Пишем сгенерированные значения в поля ввода, чтобы игрок их видел
+        if (uiInput != null)
+        {
+            uiInput.SetTargetsInInputs(currentRound.DrawTarget, currentRound.WinTarget, currentRound.LossTarget);
+        }
     }
 
     private IEnumerator WaitAndCalculateScoreRoutine()
     {
         isCalculatingScore = true;
-
-        // Небольшая задержка, чтобы физика успела придать кубикам скорость
         yield return new WaitForSeconds(0.2f);
 
-        var waitInterval = new WaitForSeconds(0.1f); // исправил от прошлой вариации из лекции 3, как будет лучше для оптимизации
+        // ОПТИМИЗАЦИЯ: Кэшируем WaitForSeconds один раз перед циклом.
+        var waitInterval = new WaitForSeconds(0.1f);
 
-        // Ждём в цикле, пока ВСЕ кубики перестанут флексить
         var allStopped = false;
         while (!allStopped)
         {
             allStopped = true;
-            for (int i = 0; i < currentRound.DiceCount; i++) // Проверяем только активные кубики
+            for (int i = 0; i < dices.Count; i++)
             {
                 if (dices[i] != null && dices[i].IsRolling)
                 {
-                    allStopped = false; // Хотя бы один кубик ещё движется
+                    allStopped = false;
                     break;
                 }
             }
 
-            // ОПТИМИЗАЦИЯ: Если кубики остановились, не ждем следующий интервал, а сразу выходим
-            if (!allStopped)
-            {
-                yield return waitInterval; // Ждём следующий интервал, а не кадр
-            }
+            if (!allStopped) yield return waitInterval;
         }
 
-        // Сумма выпавших очков
+        // Считаем очки
         var totalScore = 0;
-        for (int i = 0; i < currentRound.DiceCount; i++) // Считаем только активные кубики
+        foreach (var dice in dices)
         {
-            if (dices[i] != null)
-            {
-                totalScore += dices[i].GetUpwardValue();
-            }
+            if (dice != null) totalScore += dice.GetUpwardValue();
         }
 
-        // Обновляем Модель
         currentRound.LastScore = totalScore;
         currentRound.Result = currentRound.EvaluateResult();
 
-        // Отображаем данные
-        uiView.ShowScore(totalScore);
-        uiView.ShowResult(currentRound.Result);
-        uiView.ShowStatus("Бросок завершён! Можешь бросить снова.");
+        OnScoreChanged?.Invoke(totalScore);
+        OnResultChanged?.Invoke(currentRound.Result);
+        OnStatusChanged?.Invoke("Бросок завершён! Можешь кидать кубика снова.");
+
+        GenerateRandomTargets();
+        OnTargetsChanged?.Invoke(currentRound.DrawTarget, currentRound.WinTarget, currentRound.LossTarget);
 
         Debug.Log($"Выпало очков: {totalScore}, Результат: {currentRound.Result}");
         isCalculatingScore = false;

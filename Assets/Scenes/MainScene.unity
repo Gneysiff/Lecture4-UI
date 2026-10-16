@@ -1295,9 +1295,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1584483992}
-        m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
-        m_MethodName: OnThrowButtonClicked
+      - m_Target: {fileID: 1966360813}
+        m_TargetAssemblyTypeName: GameUIInput, Assembly-CSharp
+        m_MethodName: HandleRollButton
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -3065,11 +3065,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e3602412e12d5bc4e8d8ec8386aac5cb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
-  dices:
-  - {fileID: 0}
   dicePrefab: {fileID: 980214393910694890, guid: ecab25b9760b60e4cb334e6f922b9865, type: 3}
-  uiView: {fileID: 1966360812}
-  throwActionRef: {fileID: -5524758301472140788, guid: cc452302e6de5014eb5b8177609f2e70, type: 3}
+  uiInput: {fileID: 1966360813}
 --- !u!4 &1584483993
 Transform:
   m_ObjectHideFlags: 0
@@ -3898,6 +3895,7 @@ GameObject:
   - component: {fileID: 1966360809}
   - component: {fileID: 1966360808}
   - component: {fileID: 1966360812}
+  - component: {fileID: 1966360813}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -4012,11 +4010,25 @@ MonoBehaviour:
   resultText: {fileID: 1651660779}
   targetsText: {fileID: 116370265}
   statusText: {fileID: 1481126109}
+  gameManager: {fileID: 1584483992}
+--- !u!114 &1966360813
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1966360807}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 57e5aeba613278e4196cc4a8a2ac2917, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameUIInput
   diceCountInput: {fileID: 1119617372}
   drawScoreInput: {fileID: 123425666}
   winScoreInput: {fileID: 1362940281}
   lossScoreInput: {fileID: 1825918089}
   rollButton: {fileID: 569346842}
+  throwActionRef: {fileID: -5524758301472140788, guid: cc452302e6de5014eb5b8177609f2e70, type: 3}
   defaultDrawTarget: 10
   defaultWinTarget: 20
   defaultLossTarget: 5
